@@ -1,23 +1,27 @@
-import { useState } from 'react';
-import { StyleSheet, Text, View, Alert } from 'react-native';
-
+import React, { useState } from 'react';
+import { StyleSheet, Text, View, Alert, SafeAreaView } from 'react-native';
+import {Picker} from '@react-native-picker/picker';
 import Input from './Input';
 import Button from '../UI/Button';
 import { getFormattedDate } from '../../util/date';
 import { GlobalStyles } from '../../constants/styles';
+import { getCalanderDate } from '../../util/getCalanderDate';
 
 function ExerciseForm({ submitButtonLabel, onCancel, onSubmit, defaultValues }) {
+  
+  
+
   const [inputs, setInputs] = useState({
-    amount: {
-      value: defaultValues ? defaultValues.amount.toString() : '',
+    time: {
+      value: defaultValues ? defaultValues.time.toString() : '',
       isValid: true,
     },
     date: {
       value: defaultValues ? getFormattedDate(defaultValues.date) : '',
       isValid: true,
     },
-    description: {
-      value: defaultValues ? defaultValues.description : '',
+    exerciseType: {
+      value: defaultValues ? defaultValues.exerciseType : '',
       isValid: true,
     },
   });
@@ -33,24 +37,25 @@ function ExerciseForm({ submitButtonLabel, onCancel, onSubmit, defaultValues }) 
 
   function submitHandler() {
     const exerciseData = {
-      amount: +inputs.amount.value,
+      time: +inputs.time.value,
       date: new Date(inputs.date.value),
-      description: inputs.description.value,
+      exerciseType: inputs.exerciseType.value,
     };
 
-    const amountIsValid = !isNaN(exerciseData.amount) && exerciseData.amount > 0;
+    const timeIsValid = !isNaN(exerciseData.time) && exerciseData.time > 0;
     const dateIsValid = exerciseData.date.toString() !== 'Invalid Date';
-    const descriptionIsValid = exerciseData.description.trim().length > 0;
+    const exerciseTypeIsValid = exerciseData.exerciseType.trim().length > 0;
+   
 
-    if (!amountIsValid || !dateIsValid || !descriptionIsValid) {
+    if (!timeIsValid || !dateIsValid || !exerciseTypeIsValid) {
       // Alert.alert('Invalid input', 'Please check your input values');
       setInputs((curInputs) => {
         return {
-          amount: { value: curInputs.amount.value, isValid: amountIsValid },
+          time: { value: curInputs.time.value, isValid: timeIsValid },
           date: { value: curInputs.date.value, isValid: dateIsValid },
-          description: {
-            value: curInputs.description.value,
-            isValid: descriptionIsValid,
+          exerciseType: {
+            value: curInputs.exerciseType.value,
+            isValid: exerciseTypeIsValid,
           },
         };
       });
@@ -59,98 +64,99 @@ function ExerciseForm({ submitButtonLabel, onCancel, onSubmit, defaultValues }) 
 
     onSubmit(exerciseData);
   }
-
+   
+   
   const formIsInvalid =
-    !inputs.amount.isValid ||
+    !inputs.time.isValid ||
     !inputs.date.isValid ||
-    !inputs.description.isValid;
+    !inputs.exerciseType.isValid;
 
-  return (
-    <View style={styles.form}>
-      <Text style={styles.title}>Your Exercise</Text>
-      <View style={styles.inputsRow}>
+    return (
+      <View style={styles.form}>
+        <Text style={styles.title}>Your Exercise</Text>
+        <View style={styles.inputsRow}>
+          <Input
+            style={styles.rowInput}
+            label="Time"
+            invalid={!inputs.time.isValid}
+            textInputConfig={{
+              keyboardType: 'decimal-pad',
+              onChangeText: inputChangedHandler.bind(this, 'time'),
+              value: inputs.time.value,
+            }}
+          />
+          <Input
+            style={styles.rowInput}
+            label="Date"
+            invalid={!inputs.date.isValid}
+            textInputConfig={{
+              placeholder: 'YYYY-MM-DD',
+              maxLength: 10,
+              onChangeText: inputChangedHandler.bind(this, 'date'),
+              value: inputs.date.value,
+            }}
+          />
+        </View>
         <Input
-          style={styles.rowInput}
-          label="Time"
-          invalid={!inputs.amount.isValid}
+          label="Exercise Type"
+          invalid={!inputs.exerciseType.isValid}
           textInputConfig={{
-            keyboardType: 'decimal-pad',
-            onChangeText: inputChangedHandler.bind(this, 'amount'),
-            value: inputs.amount.value,
+            multiline: true,
+            // autoCapitalize: 'none'
+            // autoCorrect: false // default is true
+            onChangeText: inputChangedHandler.bind(this, 'exerciseType'),
+            value: inputs.exerciseType.value,
           }}
         />
-        <Input
-          style={styles.rowInput}
-          label="Date"
-          invalid={!inputs.date.isValid}
-          textInputConfig={{
-            placeholder: 'YYYY-MM-DD',
-            maxLength: 10,
-            onChangeText: inputChangedHandler.bind(this, 'date'),
-            value: inputs.date.value,
-          }}
-        />
+        {formIsInvalid && (
+          <Text style={styles.errorText}>
+            Invalid input values - please check your entered data!
+          </Text>
+        )}
+        <View style={styles.buttons}>
+          <Button style={styles.button} mode="flat" onPress={onCancel}>
+            Cancel
+          </Button>
+          <Button style={styles.button} onPress={submitHandler}>
+            {submitButtonLabel}
+          </Button>
+        </View>
       </View>
-      <Input
-        label="Exercise Type"
-        invalid={!inputs.description.isValid}
-        textInputConfig={{
-          multiline: true,
-          // autoCapitalize: 'none'
-          // autoCorrect: false // default is true
-          onChangeText: inputChangedHandler.bind(this, 'description'),
-          value: inputs.description.value,
-        }}
-      />
-      {formIsInvalid && (
-        <Text style={styles.errorText}>
-          Invalid input values - please check your entered data!
-        </Text>
-      )}
-      <View style={styles.buttons}>
-        <Button style={styles.button} mode="flat" onPress={onCancel}>
-          Cancel
-        </Button>
-        <Button style={styles.button} onPress={submitHandler}>
-          {submitButtonLabel}
-        </Button>
-      </View>
-    </View>
-  );
-}
-
-export default ExerciseForm;
-
-const styles = StyleSheet.create({
-  form: {
-    marginTop: 40,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: 'white',
-    marginVertical: 24,
-    textAlign: 'center',
-  },
-  inputsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  rowInput: {
-    flex: 1,
-  },
-  errorText: {
-    textAlign: 'center',
-    color: GlobalStyles.colors.error500,
-    margin: 8,
-  },
-  buttons: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  button: {
-    minWidth: 120,
-    marginHorizontal: 8,
-  },
-});
+    );
+  }
+  
+  export default ExerciseForm;
+  
+  const styles = StyleSheet.create({
+    form: {
+      marginTop: 40,
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: 'white',
+      marginVertical: 24,
+      textAlign: 'center',
+    },
+    inputsRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    rowInput: {
+      flex: 1,
+    },
+    errorText: {
+      textAlign: 'center',
+      color: GlobalStyles.colors.error500,
+      margin: 8,
+    },
+    buttons: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    button: {
+      minWidth: 120,
+      marginHorizontal: 8,
+    },
+  });
